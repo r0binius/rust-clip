@@ -38,10 +38,10 @@ impl Default for PluginParams {
 }
 
 impl Plugin for MyPlugin {
-    const NAME: &'static str = "My Plugin";
-    const VENDOR: &'static str = "SteckTech";
-    const URL: &'static str = "https://steck.tech";
-    const EMAIL: &'static str = "info@steck.tech";
+    const NAME: &'static str = "rClip";
+    const VENDOR: &'static str = "gobin";
+    const URL: &'static str = "https://example.com";
+    const EMAIL: &'static str = "example@example.com";
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
     const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[
@@ -103,8 +103,8 @@ impl Plugin for MyPlugin {
 }
 
 impl ClapPlugin for MyPlugin {
-    const CLAP_ID: &'static str = "com.stecktech.myplug";
-    const CLAP_DESCRIPTION: Option<&'static str> = Some("An example plugin");
+    const CLAP_ID: &'static str = "com.gobin.rclip";
+    const CLAP_DESCRIPTION: Option<&'static str> = Some("A clipping plugin");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
     const CLAP_FEATURES: &'static [ClapFeature] = &[

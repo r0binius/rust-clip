@@ -325,13 +325,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "my-plugin"
-version = "0.1.0"
-dependencies = [
- "nih_plug",
-]
-
-[[package]]
 name = "nih_log"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -496,6 +489,13 @@ name = "raw-window-handle"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2ff9a1f06a88b01621b7ae906ef0211290d1c8a168a15542486a8f61c0833b9"
+
+[[package]]
+name = "rclip"
+version = "0.1.0"
+dependencies = [
+ "nih_plug",
+]
 
 [[package]]
 name = "redox_syscall"
