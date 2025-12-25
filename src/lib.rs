@@ -21,6 +21,9 @@ struct PluginParams {
 
     #[id = "threshold"]
     pub threshold: FloatParam,
+
+    #[id = "delta"]
+    pub delta: BoolParam,
 }
 
 impl Default for RClip {
@@ -57,6 +60,11 @@ impl Default for PluginParams {
                 .with_step_size(0.1)
                 .with_smoother(SmoothingStyle::Linear(50.0))
                 .with_unit(" dB"),
+
+            delta: BoolParam::new(
+                "Delta",
+                false,
+            )
         }
     }
 }
@@ -100,23 +108,29 @@ impl Plugin for RClip {
     ) -> bool {
         true
     }
-
+    
     fn process(
         &mut self,
         buffer: &mut Buffer,
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        for sample_frame in buffer.iter_samples() {
-            let gain = self.params.gain.smoothed.next();
-            let gain = db_to_gain(gain);
+        let delta = self.params.delta.value();
 
-            let threshold = self.params.threshold.smoothed.next();
-            let t = db_to_gain(threshold);
+        for sample_frame in buffer.iter_samples() {
+            let gain_db = self.params.gain.smoothed.next();
+            let gain = db_to_gain(gain_db);
+
+            let threshold_db = self.params.threshold.smoothed.next();
+            let t = db_to_gain(threshold_db);
 
             for sample in sample_frame {
-                let x = *sample * gain;
-                *sample = hard_clip(x, t);
+                let dry = *sample;
+
+                let x = dry * gain;
+                let wet = hard_clip(x, t);
+
+                *sample = if delta { wet - dry } else { wet };
             }
         }
 
