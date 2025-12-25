@@ -1,7 +1,16 @@
 use nih_plug::{prelude::*, util::db_to_gain};
 use std::sync::Arc;
+use std::num::NonZeroU32;
 
-struct MyPlugin {
+#[inline(always)]
+fn hard_clip(x: f32, t: f32) -> f32 {
+    let t = t.max(1.0e-12);      // avoid zero/negative threshold
+    x.clamp(-t, t)
+}
+
+
+
+struct RClip {
     params: Arc<PluginParams>,
 }
 
@@ -9,9 +18,12 @@ struct MyPlugin {
 struct PluginParams {
     #[id = "gain"]
     pub gain: FloatParam,
+
+    #[id = "threshold"]
+    pub threshold: FloatParam,
 }
 
-impl Default for MyPlugin {
+impl Default for RClip {
     fn default() -> Self {
         Self {
             params: Arc::new(PluginParams::default()),
@@ -33,11 +45,23 @@ impl Default for PluginParams {
             .with_step_size(0.1)
             .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" dB"),
+
+            threshold: FloatParam::new(
+                "Threshold",
+                0.0,
+                FloatRange::Linear {
+                    min: -60.0,
+                    max: 0.0,
+                },
+            )
+                .with_step_size(0.1)
+                .with_smoother(SmoothingStyle::Linear(50.0))
+                .with_unit(" dB"),
         }
     }
 }
 
-impl Plugin for MyPlugin {
+impl Plugin for RClip {
     const NAME: &'static str = "rClip";
     const VENDOR: &'static str = "gobin";
     const URL: &'static str = "https://example.com";
@@ -83,12 +107,16 @@ impl Plugin for MyPlugin {
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        for channel_samples in buffer.iter_samples() {
+        for sample_frame in buffer.iter_samples() {
             let gain = self.params.gain.smoothed.next();
             let gain = db_to_gain(gain);
 
-            for sample in channel_samples {
-                *sample *= gain;
+            let threshold = self.params.threshold.smoothed.next();
+            let t = db_to_gain(threshold);
+
+            for sample in sample_frame {
+                let x = *sample * gain;
+                *sample = hard_clip(x, t);
             }
         }
 
@@ -102,8 +130,8 @@ impl Plugin for MyPlugin {
     fn deactivate(&mut self) {}
 }
 
-impl ClapPlugin for MyPlugin {
-    const CLAP_ID: &'static str = "com.gobin.rclip";
+impl ClapPlugin for RClip {
+    const CLAP_ID: &'static str = "com.gobin.RClip";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("A clipping plugin");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
@@ -115,11 +143,11 @@ impl ClapPlugin for MyPlugin {
     ];
 }
 
-impl Vst3Plugin for MyPlugin {
+impl Vst3Plugin for RClip {
     const VST3_CLASS_ID: [u8; 16] = *b"MStecktechPlugin";
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
         &[Vst3SubCategory::Fx, Vst3SubCategory::Tools];
 }
 
-nih_export_clap!(MyPlugin);
-nih_export_vst3!(MyPlugin);
+nih_export_clap!(RClip);
+nih_export_vst3!(RClip);
