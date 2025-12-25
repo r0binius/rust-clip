@@ -3,12 +3,10 @@ use std::sync::Arc;
 use std::num::NonZeroU32;
 
 #[inline(always)]
-fn hard_clip(x: f32, t: f32) -> f32 {
-    let t = t.max(1.0e-12);      // avoid zero/negative threshold
-    x.clamp(-t, t)
+fn hard_clip(signal: f32, ceiling: f32) -> f32 {
+    let ceiling = ceiling.max(1.0e-12);    // avoid zero or negative threshold
+    signal.clamp(-ceiling, ceiling)
 }
-
-
 
 struct RClip {
     params: Arc<PluginParams>,
@@ -41,8 +39,8 @@ impl Default for PluginParams {
                 "Gain",
                 0.0,
                 FloatRange::Linear {
-                    min: -10.0,
-                    max: 10.0,
+                    min: -12.0,
+                    max: 12.0,
                 },
             )
             .with_step_size(0.1)
@@ -53,7 +51,7 @@ impl Default for PluginParams {
                 "Threshold",
                 0.0,
                 FloatRange::Linear {
-                    min: -60.0,
+                    min: -24.0,
                     max: 0.0,
                 },
             )
@@ -108,7 +106,9 @@ impl Plugin for RClip {
     ) -> bool {
         true
     }
-    
+
+    fn reset(&mut self) {}
+
     fn process(
         &mut self,
         buffer: &mut Buffer,
@@ -117,18 +117,18 @@ impl Plugin for RClip {
     ) -> ProcessStatus {
         let delta = self.params.delta.value();
 
-        for sample_frame in buffer.iter_samples() {
+        for channel_samples in buffer.iter_samples() {
             let gain_db = self.params.gain.smoothed.next();
             let gain = db_to_gain(gain_db);
 
             let threshold_db = self.params.threshold.smoothed.next();
-            let t = db_to_gain(threshold_db);
+            let ceiling = db_to_gain(threshold_db);
 
-            for sample in sample_frame {
+            for sample in channel_samples {
                 let dry = *sample;
 
-                let x = dry * gain;
-                let wet = hard_clip(x, t);
+                let signal = dry * gain;
+                let wet = hard_clip(signal, ceiling);
 
                 *sample = if delta { wet - dry } else { wet };
             }
@@ -136,8 +136,6 @@ impl Plugin for RClip {
 
         ProcessStatus::Normal
     }
-
-    fn reset(&mut self) {}
 
     // This can be used for cleaning up special resources like socket connections whenever the
     // plugin is deactivated. Most plugins won't need to do anything here.
