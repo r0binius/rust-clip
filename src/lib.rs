@@ -1,10 +1,10 @@
 use nih_plug::{prelude::*, util::db_to_gain};
-use std::sync::Arc;
 use std::num::NonZeroU32;
+use std::sync::Arc;
 
 #[inline(always)]
 fn hard_clip(signal: f32, ceiling: f32) -> f32 {
-    let ceiling = ceiling.max(1.0e-12);    // avoid zero or negative threshold
+    let ceiling = ceiling.max(1.0e-12); // avoid zero or negative threshold
     signal.clamp(-ceiling, ceiling)
 }
 
@@ -55,14 +55,11 @@ impl Default for PluginParams {
                     max: 0.0,
                 },
             )
-                .with_step_size(0.1)
-                .with_smoother(SmoothingStyle::Linear(50.0))
-                .with_unit(" dB"),
+            .with_step_size(0.1)
+            .with_smoother(SmoothingStyle::Linear(50.0))
+            .with_unit(" dB"),
 
-            delta: BoolParam::new(
-                "Delta",
-                false,
-            )
+            delta: BoolParam::new("Delta", false),
         }
     }
 }

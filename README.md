@@ -5,7 +5,7 @@ This is just a starting template for plugins using the nih-plug plugin framework
 ## Build
 
 ```sh
-cargo xtask bundle my-plugin --release
+cargo xtask bundle rclip --release
 ```
 
 ## Copy to Plugin Folder
@@ -14,10 +14,10 @@ cargo xtask bundle my-plugin --release
 
 Clap:
 ```sh
-cp -r target/bundled/my-plugin.clap ~/.clap/
+cp -r target/bundled/rclip.clap ~/.clap/
 ```
 
 VST:
 ```sh
-cp -r target/bundled/my-plugin.vst3 ~/.vst3/
+cp -r target/bundled/rclip.vst3 ~/.vst3/
 ```
