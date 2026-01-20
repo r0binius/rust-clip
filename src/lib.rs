@@ -4,8 +4,20 @@ use std::sync::Arc;
 
 #[inline(always)]
 fn hard_clip(signal: f32, ceiling: f32) -> f32 {
-    let ceiling = ceiling.max(1.0e-12); // avoid zero or negative threshold
+    let ceiling = ceiling.max(1.0e-12);
     signal.clamp(-ceiling, ceiling)
+}
+#[inline(always)]
+fn soft_clip(signal: f32, ceiling: f32) -> f32 {
+    let ceiling = ceiling.max(1.0e-12);
+    let x = (signal / ceiling).tanh();
+    x * ceiling
+}
+
+#[derive(Enum, Copy, Clone, Debug, PartialEq, Eq)]
+enum ClippingModes {
+    HardClip,
+    SoftClip,
 }
 
 struct RClip {
@@ -14,6 +26,9 @@ struct RClip {
 
 #[derive(Params)]
 struct PluginParams {
+    #[id = "mode"]
+    pub mode: EnumParam<ClippingModes>,
+
     #[id = "gain"]
     pub gain: FloatParam,
 
@@ -35,6 +50,7 @@ impl Default for RClip {
 impl Default for PluginParams {
     fn default() -> Self {
         Self {
+            mode: EnumParam::new("Mode", ClippingModes::HardClip),
             gain: FloatParam::new(
                 "Gain",
                 0.0,
@@ -113,6 +129,7 @@ impl Plugin for RClip {
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         let delta = self.params.delta.value();
+        let mode = self.params.mode.value();
 
         for channel_samples in buffer.iter_samples() {
             let gain_db = self.params.gain.smoothed.next();
@@ -125,8 +142,10 @@ impl Plugin for RClip {
                 let dry = *sample;
 
                 let signal = dry * gain;
-                let wet = hard_clip(signal, ceiling);
-
+                let wet = match mode {
+                    ClippingModes::HardClip => hard_clip(signal, ceiling),
+                    ClippingModes::SoftClip => soft_clip(signal, ceiling),
+                };
                 *sample = if delta { wet - dry } else { wet };
             }
         }

@@ -14,7 +14,7 @@ cargo xtask bundle rclip --release
 
 Clap:
 ```sh
-cp -r target/bundled/rclip.clap ~/.clap/
+cp -r target/bundled/rclip.clap /Library/Audio/Plug-Ins/CLAP 
 ```
 
 VST:
